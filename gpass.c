@@ -46,7 +46,7 @@ gen(void)
 		return;
 	}
 	for (char c = getc(fp); c != EOF; c = getc(fp))
-		nlines = (c == '\n') ? nlines + 1 : nlines;
+		nlines += (c == '\n');
 
 	int plen = minent / log2(nlines) + 1;
 	if (plen > nlines) {
@@ -74,7 +74,7 @@ gen(void)
 				nlines = 0;
 			}
 		}
-		nlines += (c == '\n' || c == EOF || c == '\0') ? 1 : 0;
+		nlines += (c == '\n' || c == EOF || c == '\0');
 	}
 	putchar('\n');
 	fclose(fp);
@@ -113,8 +113,8 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
-	dict = dict ? dict : getenv("GPASS_DIC");
-	dict = dict ? dict : PREFIX "/share/gpass/eff.long";
+	if (!dict && !(dict = getenv("GPASS_DIC")))
+		dict = PREFIX "/share/gpass/eff.long";
 	for (int i = 0; i < npass; i++)
 		gen();
 }
