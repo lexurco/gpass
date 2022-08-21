@@ -1,17 +1,25 @@
 VERSION = 0.1
 
-# NOTE: avoid equality signs (`=') in PREFIX, or edit the rule install.
 PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/man
+# Linux
+#MANPREFIX = $(PREFIX)/share/man
 
-INCS = -I/usr/local/include
-LIBS = -L/usr/local/lib -lm -lsodium
+LIBS = -lm -lsodium
+# OpenBSD
+#INCS = -I/usr/local/include
+#LIBS = -L/usr/local/lib -lm -lsodium
 
 CC = cc
 CPPFLAGS = -D_DEFAULT_SOURCE
-CFLAGS = -std=c99 -Wall -pedantic $(INCS)
+CFLAGS = -std=c99 -Wall -pedantic $(INCS) -O2
 LDFLAGS = $(LIBS)
-CFLAGS_EXTRA = -fstack-protector-strong -O2 -fPIE
-CPPFLAGS_EXTRA = -D_FORTIFY_SOURCE=2
-LDFLAGS_EXTRA = -pie -Wl,-z,relro -Wl,-z,now
-CFLAGS_DEBUG = -Wextra -Wformat -Wformat-security -fstack-protector-all -O0 -g
+
+# Libbsd
+#CFLAGS = -std=c99 -Wall -pedantic -O2 -DLIBBSD_OVERLAY -isystem /usr/include/bsd $(INCS)
+#LDFLAGS = -lbsd $(LIBS)
+
+# Debug
+#CFLAGS = -std=c99 -Wall -pedantic $(INCS) -Wextra -O0 -g
+# Libbsd+debug
+#CFLAGS = -std=c99 -Wall -pedantic -DLIBBSD_OVERLAY -isystem /usr/include/bsd $(INCS) -Wextra -O0 -g
