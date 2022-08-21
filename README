@@ -9,4 +9,5 @@ config.mk as necessary and run make, followed by make install:
 DEPENDENCIES
 
 gpass relies on libsodium to guarantee cryptographic randomness of the chosen
-words.
+words. It also depends on some BSD extersions. Those should be available on most
+system in a package "libbsd".
