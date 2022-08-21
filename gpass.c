@@ -106,7 +106,9 @@ main(int argc, char *argv[])
 	}
 	for (char c = getc(dictfp); c != EOF; c = getc(dictfp))
 		nlines += (c == '\n');
-	plen = plen / log2(nlines) + 1;
+	int log2nlines = log2(nlines);
+	plen = plen / log2nlines + !!(plen % log2nlines);
+	plen += !plen;
 
 	for (int i = 0; i < npass; i++)
 		gen();
