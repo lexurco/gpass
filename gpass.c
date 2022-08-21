@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
 #include <unistd.h>
@@ -13,7 +14,7 @@
  #define PREFIX "/usr/local"
 #endif
 
-char *pgen, *dictname = NULL;
+char *dictname = NULL;
 int plen = 70, nlines = 0, npass = 1;
 FILE *dictfp;
 
@@ -22,7 +23,7 @@ FILE *dictfp;
 int
 usage(void)
 {
-	fprintf(stderr, "%s [-d dict] [-e bits] [-n count]\n", pgen);
+	fprintf(stderr, "%s [-d dict] [-e bits] [-n count]\n", getprogname());
 	exit(EXIT_FAILURE);
 }
 
@@ -55,9 +56,9 @@ gen(void)
 int
 main(int argc, char *argv[])
 {
-	pgen = argv[0];
 	if (sodium_init() < 0)
 		err(1, "libsodium");
+
 	int c;
 	while ((c = getopt(argc, argv, "d:e:n:")) != -1) {
 		switch (c) {
@@ -92,4 +93,6 @@ main(int argc, char *argv[])
 	for (int i = 0; i < npass; i++)
 		gen();
 	fclose(dictfp);
+
+	return 0;
 }
