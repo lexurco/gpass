@@ -86,6 +86,8 @@ main(int argc, char *argv[])
 		err(1, "could not open the dictionary file %s", dictname);
 	for (char c = getc(dictfp); c != EOF; c = getc(dictfp))
 		nlines += (c == '\n');
+	if (nlines < 2)
+		errx(1, "the dictionary %s has less that 2 words", dictname);
 	int log2nlines = log2(nlines);
 	plen = plen / log2nlines + !!(plen % log2nlines);
 	plen += !plen;
