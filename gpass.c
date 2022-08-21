@@ -12,8 +12,11 @@
  #define PREFIX "/usr/local"
 #endif
 
-char *pgen, *dict = NULL;
-int npass = 1, minent = 70;
+char *pgen, *dictname = NULL;
+int plen = 70, nlines = 0, npass = 1;
+FILE *dictfp;
+
+#define RANDLINE (int)randombytes_uniform(nlines)+1
 
 int
 usage(void)
@@ -38,46 +41,27 @@ err(char *fmt, ...)
 void
 gen(void)
 {
-	int nlines = 0;
-	FILE *fp;
-	if (!(fp = fopen(dict, "r"))) {
-		err("could not open the dictionary file %s", dict);
-		exit(EXIT_FAILURE);
-		return;
-	}
-	for (char c = getc(fp); c != EOF; c = getc(fp))
-		nlines += (c == '\n');
-
-	int plen = minent / log2(nlines) + 1;
-	if (plen > nlines) {
-		err("dictionary is too short");
-		exit(EXIT_FAILURE);
-	}
-	if (plen >= MAXWORDS) {
-		err("required passphrase length is too big");
-		exit(EXIT_FAILURE);
-	}
-	int nums[MAXWORDS];
-	for (int i = 0; i < plen; i++)
-		nums[i] = (int)randombytes_uniform(nlines)+1;
-
-	rewind(fp);
-	nlines = 1;
-	char c = getc(fp);
-	for(int i = 0; i < plen; c = getc(fp)) {
-		if (nlines == nums[i]) {
-			for (; c != '\n' && c != EOF && c != '\0'; c = getc(fp))
+	rewind(dictfp);
+	char c;
+	int left = plen, cur = 1, sought = RANDLINE;
+	for (;;) {
+		c = getc(dictfp);
+		if (cur == sought) {
+			for (; c != '\n' && c != EOF; c = getc(dictfp))
 				putchar(c);
-			putchar(' ');
-			if (++i < plen && nums[i] <= nlines) {
-				rewind(fp);
-				nlines = 0;
-			}
+			if (--left) {
+				putchar(' ');
+				sought = RANDLINE;
+				if (sought <= cur) {
+					rewind(dictfp);
+					cur = 0;
+				}
+			} else
+				break;
 		}
-		nlines += (c == '\n' || c == EOF || c == '\0');
+		cur += (c == '\n' || c == EOF || c == '\0');
 	}
 	putchar('\n');
-	fclose(fp);
 }
 
 int
@@ -86,35 +70,45 @@ main(int argc, char *argv[])
 	pgen = argv[0];
 	if (sodium_init() < 0) {
 		err("could not initialise libsodium");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	int c;
 	while ((c = getopt(argc, argv, "d:e:n:")) != -1) {
 		switch (c) {
 		case 'd':
-			dict = optarg;
+			dictname = optarg;
 			break;
 		case 'e':
-			minent = strtonum(optarg, 1, INT_MAX, NULL);
-			if (!minent) {
+			plen = strtonum(optarg, 1, INT_MAX, NULL);
+			if (!plen) {
 				err("invalid entropy: use 1-%d", INT_MAX);
-				return 1;
+				exit(EXIT_FAILURE);
 			}
 			break;
 		case 'n':
 			npass = strtonum(optarg, 1, INT_MAX, NULL);
 			if (!npass) {
 				err("invalid number of passphrases: use 1-%d",
-					INT_MAX);
-				return 1;
+				    INT_MAX);
+				exit(EXIT_FAILURE);
 			}
 			break;
 		default:
 			usage();
 		}
 	}
-	if (!dict && !(dict = getenv("GPASS_DIC")))
-		dict = PREFIX "/share/gpass/eff.long";
+
+	if (!dictname && !(dictname = getenv("GPASS_DIC")))
+		dictname = PREFIX "/share/gpass/eff.long";
+	if (!(dictfp = fopen(dictname, "r"))) {
+		err("could not open the dictionary file %s", dictfp);
+		exit(EXIT_FAILURE);
+	}
+	for (char c = getc(dictfp); c != EOF; c = getc(dictfp))
+		nlines += (c == '\n');
+	plen = plen / log2(nlines) + 1;
+
 	for (int i = 0; i < npass; i++)
 		gen();
+	fclose(dictfp);
 }
