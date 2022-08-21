@@ -1,8 +1,9 @@
+#include <err.h>
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include <sodium.h>
@@ -23,19 +24,6 @@ usage(void)
 {
 	fprintf(stderr, "%s [-d dict] [-e bits] [-n count]\n", pgen);
 	exit(EXIT_FAILURE);
-}
-
-void
-err(char *fmt, ...)
-{
-	fprintf(stderr, "%s: ", pgen);
-	if (fmt) {
-		va_list argp;
-		va_start(argp, fmt);
-		vfprintf(stderr, fmt, argp);
-		va_end(argp);
-	}
-	fprintf(stderr, "\n");
 }
 
 void
@@ -68,10 +56,8 @@ int
 main(int argc, char *argv[])
 {
 	pgen = argv[0];
-	if (sodium_init() < 0) {
-		err("could not initialise libsodium");
-		exit(EXIT_FAILURE);
-	}
+	if (sodium_init() < 0)
+		err(1, "libsodium");
 	int c;
 	while ((c = getopt(argc, argv, "d:e:n:")) != -1) {
 		switch (c) {
@@ -80,18 +66,13 @@ main(int argc, char *argv[])
 			break;
 		case 'e':
 			plen = strtonum(optarg, 1, INT_MAX, NULL);
-			if (!plen) {
-				err("invalid entropy: use 1-%d", INT_MAX);
-				exit(EXIT_FAILURE);
-			}
+			if (!plen)
+				err(1, "bad entropy");
 			break;
 		case 'n':
 			npass = strtonum(optarg, 1, INT_MAX, NULL);
-			if (!npass) {
-				err("invalid number of passphrases: use 1-%d",
-				    INT_MAX);
-				exit(EXIT_FAILURE);
-			}
+			if (!npass)
+				err(1, "bad number of passphrases");
 			break;
 		default:
 			usage();
@@ -100,10 +81,8 @@ main(int argc, char *argv[])
 
 	if (!dictname && !(dictname = getenv("GPASS_DIC")))
 		dictname = PREFIX "/share/gpass/eff.long";
-	if (!(dictfp = fopen(dictname, "r"))) {
-		err("could not open the dictionary file %s", dictfp);
-		exit(EXIT_FAILURE);
-	}
+	if (!(dictfp = fopen(dictname, "r")))
+		err(1, "could not open the dictionary file %s", dictname);
 	for (char c = getc(dictfp); c != EOF; c = getc(dictfp))
 		nlines += (c == '\n');
 	int log2nlines = log2(nlines);
