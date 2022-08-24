@@ -32,8 +32,8 @@ gen(void)
 {
 	rewind(dictfp);
 	char c;
-	int left = plen, cur = 1, sought = RANDLINE;
-	for (;;) {
+	for (int left = plen, cur = 1, sought = RANDLINE; left;
+	    cur += (c == '\n' || c == EOF)) {
 		c = getc(dictfp);
 		if (cur == sought) {
 			for (; c != '\n' && c != EOF; c = getc(dictfp))
@@ -45,10 +45,8 @@ gen(void)
 					rewind(dictfp);
 					cur = 0;
 				}
-			} else
-				break;
+			}
 		}
-		cur += (c == '\n' || c == EOF || c == '\0');
 	}
 	putchar('\n');
 }
