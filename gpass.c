@@ -10,15 +10,14 @@
 #include <sodium.h>
 
 #define MAXWORDS 128
+#define RANDLINE (int)randombytes_uniform(nlines)+1
 #ifndef PREFIX
- #define PREFIX "/usr/local"
+#	define PREFIX "/usr/local"
 #endif
 
 char *dictname = NULL;
 int plen = 70, nlines = 0, npass = 1;
 FILE *dictfp;
-
-#define RANDLINE (int)randombytes_uniform(nlines)+1
 
 int
 usage(void)
@@ -33,7 +32,7 @@ gen(void)
 	rewind(dictfp);
 	char c;
 	for (int left = plen, cur = 1, sought = RANDLINE; left;
-	    cur += (c == '\n' || c == EOF)) {
+	    cur += (c == '\n')) {
 		c = getc(dictfp);
 		if (cur == sought) {
 			for (; c != '\n' && c != EOF; c = getc(dictfp))
@@ -66,12 +65,15 @@ main(int argc, char *argv[])
 		case 'e':
 			plen = strtonum(optarg, 1, INT_MAX, NULL);
 			if (!plen)
-				err(1, "bad entropy");
+				errx(1, "bad entropy (must be 1-%d bits)",
+				    INT_MAX);
 			break;
 		case 'n':
 			npass = strtonum(optarg, 1, INT_MAX, NULL);
 			if (!npass)
-				err(1, "bad number of passphrases");
+				errx(1,
+				    "bad number of passphrases (must be 1-%d)",
+				    INT_MAX);
 			break;
 		default:
 			usage();
