@@ -27,7 +27,7 @@ install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	install -m 755 $(BIN) $(DESTDIR)$(PREFIX)/bin/
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	sed s=PREFIX=$(PREFIX)=g < gpass.1 > $(DESTDIR)$(MANPREFIX)/man1/gpass.1
+	sed s=PREFIX=$(PREFIX)=g <gpass.1 >$(DESTDIR)$(MANPREFIX)/man1/gpass.1
 	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/gpass.1
 	mkdir -p $(DESTDIR)$(PREFIX)/share/gpass
 	install -m 644 eff.long $(DESTDIR)$(PREFIX)/share/gpass
