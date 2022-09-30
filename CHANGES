@@ -1,3 +1,7 @@
+0.3.1
+
+Minor fix for OpenBSD: the unveil ability is removed once it's unneeded.
+
 0.3
 
 - Added support for pledge(2) and unveil(2) on OpenBSD.
