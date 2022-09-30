@@ -42,7 +42,7 @@ clean:
 
 dist: clean
 	mkdir -p gpass-$(VERSION)
-	cp -f README Makefile config.mk eff.long $(SRC) $(MAN) gpass-$(VERSION)
+	cp -f CHANGES README Makefile config.mk eff.long $(SRC) $(MAN) gpass-$(VERSION)
 	tar cf - gpass-$(VERSION) | gzip >gpass-$(VERSION).tar.gz
 	rm -rf gpass-$(VERSION)
 
