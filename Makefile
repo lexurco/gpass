@@ -38,14 +38,12 @@ uninstall:
 	cd $(DESTDIR)$(PREFIX)/share && rm -rf gpass
 
 clean:
-	-rm -f $(BIN) $(OBJ)
-	-rm -f gpass-$(VERSION).tar.gz
-	-rm -f *.core
+	-rm -f $(BIN) $(OBJ) *.tar.gz *.core
 
 dist: clean
 	mkdir -p gpass-$(VERSION)
-	cp -rf README Makefile config.mk eff.long $(SRC) $(MAN) gpass-$(VERSION)
-	tar -czf gpass-$(VERSION).tar.gz gpass-$(VERSION)
+	cp -f README Makefile config.mk eff.long $(SRC) $(MAN) gpass-$(VERSION)
+	tar cf - gpass-$(VERSION) | gzip >gpass-$(VERSION).tar.gz
 	rm -rf gpass-$(VERSION)
 
 .PHONY: all options install uninstall clean dist
