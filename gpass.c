@@ -1,4 +1,3 @@
-#include <err.h>
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
@@ -7,17 +6,19 @@
 #include <strings.h>
 #include <unistd.h>
 
+#include <err.h>
+
 #include <sodium.h>
 
 #define MAXWORDS 128
-#define RANDLINE (int)randombytes_uniform(nlines)+1
+#define RANDLINE randombytes_uniform(nlines)+1
 #ifndef PREFIX
 #	define PREFIX "/usr/local"
 #endif
 
-char *dictname = NULL;
-int plen = 70, nlines = 0, npass = 1;
-FILE *dictfp;
+FILE *dicfp;
+int plen = 70;
+uint32_t nlines = 0;
 
 int
 usage(void)
@@ -29,38 +30,48 @@ usage(void)
 void
 gen(void)
 {
-	rewind(dictfp);
 	char c;
-	for (int left = plen, cur = 1, sought = RANDLINE; left;
-	    cur += (c == '\n')) {
-		c = getc(dictfp);
-		if (cur == sought) {
-			for (; c != '\n' && c != EOF; c = getc(dictfp))
-				putchar(c);
-			if (--left) {
-				putchar(' ');
-				sought = RANDLINE;
-				if (sought <= cur) {
-					rewind(dictfp);
-					cur = 0;
-				}
-			}
+	int left = plen;
+	uint32_t cur = 1, sought = RANDLINE;
+
+	rewind(dicfp);
+
+	for (;;) {
+		while (getc(dicfp) != '\n')
+			;
+		if (++cur != sought)
+			continue;
+		while ((c = getc(dicfp)) != '\n')
+			putchar(c);
+		if (!--left)
+			break;
+		putchar(' ');
+		if ((sought = RANDLINE) <= cur) {
+			rewind(dicfp);
+			cur = 0;
 		}
 	}
+
 	putchar('\n');
 }
 
 int
 main(int argc, char *argv[])
 {
+	int c, npass = 1;
+	char *dicname = NULL;
+
+#ifdef __OpenBSD__
+	if (pledge("stdio unveil rpath", NULL) == -1)
+		err(1, "pledge");
+#endif
 	if (sodium_init() < 0)
 		err(1, "libsodium");
 
-	int c;
 	while ((c = getopt(argc, argv, "d:e:n:")) != -1) {
 		switch (c) {
 		case 'd':
-			dictname = optarg;
+			dicname = optarg;
 			break;
 		case 'e':
 			plen = strtonum(optarg, 1, INT_MAX, NULL);
@@ -80,21 +91,25 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (!dictname && !(dictname = getenv("GPASS_DIC")))
-		dictname = PREFIX "/share/gpass/eff.long";
-	if (!(dictfp = fopen(dictname, "r")))
-		err(1, "could not open the dictionary file %s", dictname);
-	for (char c = getc(dictfp); c != EOF; c = getc(dictfp))
+	if (!dicname && !(dicname = getenv("GPASS_DIC")))
+		dicname = PREFIX "/share/gpass/eff.long";
+#ifdef __OpenBSD__
+	if (unveil(dicname, "r") == -1)
+		err(1, "unveil %s", dicname);
+#endif
+	if (!(dicfp = fopen(dicname, "r")))
+		err(1, "could not open %s", dicname);
+	while ((c = getc(dicfp)) != EOF && nlines < UINT32_MAX)
 		nlines += (c == '\n');
 	if (nlines < 2)
-		errx(1, "the dictionary %s has less that 2 words", dictname);
+		errx(1, "%s has less that 2 lines", dicname);
 	int log2nlines = log2(nlines);
 	plen = plen / log2nlines + !!(plen % log2nlines);
 	plen += !plen;
 
 	for (int i = 0; i < npass; i++)
 		gen();
-	fclose(dictfp);
+	fclose(dicfp);
 
 	return 0;
 }
