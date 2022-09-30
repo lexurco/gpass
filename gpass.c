@@ -1,12 +1,12 @@
+#include <errno.h>
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
-
-#include <err.h>
 
 #include <sodium.h>
 
@@ -20,10 +20,41 @@ FILE *dicfp;
 int plen = 70;
 uint32_t nlines = 0;
 
+void
+errx(int eval, const char *fmt, ...)
+{
+	fputs("gpass: ", stderr);
+	if (fmt != NULL) {
+		va_list argp;
+		va_start(argp, fmt);
+		vfprintf(stderr, fmt, argp);
+		va_end(argp);
+	}
+	fputc('\n', stderr);
+	exit(eval);
+}
+
+void
+err(int eval, const char *fmt, ...)
+{
+	char *e = strerror(errno);
+	fputs("gpass: ", stderr);
+	if (fmt != NULL) {
+		va_list argp;
+		va_start(argp, fmt);
+		vfprintf(stderr, fmt, argp);
+		va_end(argp);
+	}
+	fputs(": ", stderr);
+	fputs(e, stderr);
+	fputc('\n', stderr);
+	exit(eval);
+}
+
 int
 usage(void)
 {
-	fprintf(stderr, "%s [-d dict] [-e bits] [-n count]\n", getprogname());
+	fprintf(stderr, "usage: gpass [-d dict] [-e bits] [-n count]\n");
 	exit(EXIT_FAILURE);
 }
 
