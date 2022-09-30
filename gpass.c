@@ -127,6 +127,8 @@ main(int argc, char *argv[])
 #ifdef __OpenBSD__
 	if (unveil(dicname, "r") == -1)
 		err(1, "unveil %s", dicname);
+	if (pledge("stdio rpath", NULL) == -1) /* Revoke unveil ability. */
+		err(1, "pledge");
 #endif
 	if (!(dicfp = fopen(dicname, "r")))
 		err(1, "could not open %s", dicname);
