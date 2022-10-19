@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 	char *dicname = NULL;
 
 #ifdef __OpenBSD__
-	if (pledge("stdio unveil rpath", NULL) == -1)
+	if (pledge("stdio unveil rpath", NULL) == -1) /* first call */
 		err(1, "pledge");
 #endif
 	if (sodium_init() < 0)
@@ -105,17 +105,12 @@ main(int argc, char *argv[])
 			dicname = optarg;
 			break;
 		case 'e':
-			plen = strtonum(optarg, 1, INT_MAX, NULL);
-			if (!plen)
-				errx(1, "bad entropy (must be 1-%d bits)",
-				    INT_MAX);
+			if ((plen = atoi(optarg)) < 1)
+				errx(1, "less than 1 bit of entropy requested");
 			break;
 		case 'n':
-			npass = strtonum(optarg, 1, INT_MAX, NULL);
-			if (!npass)
-				errx(1,
-				    "bad number of passphrases (must be 1-%d)",
-				    INT_MAX);
+			if ((npass = atoi(optarg)) < 1)
+				errx(1, "less than 1 passphrase requested");
 			break;
 		default:
 			usage();
@@ -127,7 +122,7 @@ main(int argc, char *argv[])
 #ifdef __OpenBSD__
 	if (unveil(dicname, "r") == -1)
 		err(1, "unveil %s", dicname);
-	if (pledge("stdio rpath", NULL) == -1) /* Revoke unveil ability. */
+	if (pledge("stdio rpath", NULL) == -1) /* revoke unveil */
 		err(1, "pledge");
 #endif
 	if (!(dicfp = fopen(dicname, "r")))
