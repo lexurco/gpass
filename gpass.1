@@ -13,7 +13,8 @@
 The utility
 .Nm
 outputs a secure passphrase by randomly choosing an appropriate number of lines
-from a newline-separated dictionary file. The options are as follows:
+from a dictionary file, containing whitespace-separated words.
+The options are as follows:
 .Bl -tag -width Ds
 .It Fl d Ar dict
 Use the dictionary
@@ -21,7 +22,8 @@ Use the dictionary
 .It Fl e Ar bits
 Generate a passphrase with at least the specified number of
 .Ar bits
-of entropy. Default is 70.
+of entropy.
+Default is 70.
 .It Fl n Ar num
 Generate
 .Ar num
@@ -38,5 +40,8 @@ is specified.
 .Bl -tag -width Ds
 .It Pa PREFIX/share/gpass/eff.long
 The default dictionary file.
+.El
+.Sh AUTHORS
+.An Alexander Arkhipov Aq Mt aa_src@manpager.net .
 .Sh EXIT STATUS
 .Ex -std
