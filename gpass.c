@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -10,15 +11,15 @@
 
 #include <sodium.h>
 
-#define MAXWORDS 128
-#define RANDLINE randombytes_uniform(nlines)+1
+#define MAXWORDS 32768
 #ifndef PREFIX
 #	define PREFIX "/usr/local"
 #endif
 
 FILE *dicfp;
+uint32_t nwords = 0;
+int offs[MAXWORDS];
 int plen = 70;
-uint32_t nlines = 0;
 
 void
 errx(int eval, const char *fmt, ...)
@@ -61,36 +62,31 @@ usage(void)
 void
 gen(void)
 {
-	char c;
-	int left = plen;
-	uint32_t cur = 1, sought = RANDLINE;
+	int c;
+	int left;
+	uint32_t n;
 
-	rewind(dicfp);
-
-	for (;;) {
-		while (getc(dicfp) != '\n')
-			;
-		if (++cur != sought)
-			continue;
-		while ((c = getc(dicfp)) != '\n')
+	for (left = plen; left; left--) {
+		n = randombytes_uniform(nwords) + 1;
+		if (fseek(dicfp, offs[n], SEEK_SET) == -1)
+			err(1, "fseek");
+		while ((c = getc(dicfp)) != EOF && !isspace(c))
 			putchar(c);
-		if (!--left)
-			break;
-		putchar(' ');
-		if ((sought = RANDLINE) <= cur) {
-			rewind(dicfp);
-			cur = 0;
-		}
+		if (left > 1)
+			putchar(' ');
 	}
-
 	putchar('\n');
 }
 
 int
 main(int argc, char *argv[])
 {
-	int c, npass = 1;
-	char *dicname = NULL;
+	int c, isword, npass, temp;
+	char *dicname;
+
+	isword = 0;
+	npass = 1;
+	dicname = NULL;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio unveil rpath", NULL) == -1) /* first call */
@@ -125,14 +121,22 @@ main(int argc, char *argv[])
 	if (pledge("stdio rpath", NULL) == -1) /* revoke unveil */
 		err(1, "pledge");
 #endif
+
 	if (!(dicfp = fopen(dicname, "r")))
 		err(1, "could not open %s", dicname);
-	while ((c = getc(dicfp)) != EOF && nlines < UINT32_MAX)
-		nlines += (c == '\n');
-	if (nlines < 2)
-		errx(1, "%s has less that 2 lines", dicname);
-	int log2nlines = log2(nlines);
-	plen = plen / log2nlines + !!(plen % log2nlines);
+	offs[0] = ftell(dicfp);
+	while ((c = getc(dicfp)) != EOF && nwords < MAXWORDS)
+		if (isspace(c)) {
+			nwords += isword ? 1 : 0;
+			isword = 0;
+			offs[nwords] = ftell(dicfp);
+		} else
+			isword = 1;
+	if (nwords < 2)
+		errx(1, "%s has less that 2 words", dicname);
+
+	temp = log2(nwords);
+	plen = plen / temp + !!(plen % temp);
 	plen += !plen;
 
 	for (int i = 0; i < npass; i++)
