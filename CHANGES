@@ -1,3 +1,11 @@
+0.3.3
+
+- Words can now be separated by any amount of any whitespace.
+- Improved the algorithm: offsets of words are now memorised on the
+first pass.
+- Limited the number of words in the dictionary to 32767.
+- Simplified the makefile.
+
 0.3.2
 
 Removed the BSD dependencies (again).
