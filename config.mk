@@ -3,18 +3,13 @@ VERSION = 0.3.4
 PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/man
 
-INCS = -I/usr/local/include
-LIBS = -L/usr/local/lib -lm -lsodium
-
 CC = cc
 CPPFLAGS = -D_DEFAULT_SOURCE
-CFLAGS = -std=c99 -Wall -pedantic $(INCS) -O2
-LDFLAGS = $(LIBS)
-
-# Debug
-#CFLAGS = -std=c99 -Wall -pedantic $(INCS) -Wextra -O0 -g
+CFLAGS = -std=c99 -Wall -pedantic -O2
+LDFLAGS = -lm
 
 # Linux
 #MANPREFIX = $(PREFIX)/share/man
-#INCS =
-#LIBS = -lm -lsodium
+
+# Debug
+#CFLAGS = -std=c99 -Wall -pedantic -Wextra -O0 -g

@@ -9,8 +9,6 @@
 #include <strings.h>
 #include <unistd.h>
 
-#include <sodium.h>
-
 #define MAXWORDS 32768
 #ifndef PREFIX
 #	define PREFIX "/usr/local"
@@ -67,7 +65,7 @@ gen(void)
 	uint32_t n;
 
 	for (left = plen; left; left--) {
-		n = randombytes_uniform(nwords) + 1;
+		n = arc4random_uniform(nwords) + 1;
 		if (fseek(dicfp, offs[n], SEEK_SET) == -1)
 			err(1, "fseek");
 		while ((c = getc(dicfp)) != EOF && !isspace(c))
@@ -92,9 +90,6 @@ main(int argc, char *argv[])
 	if (pledge("stdio unveil rpath", NULL) == -1) /* first call */
 		err(1, "pledge");
 #endif
-	if (sodium_init() < 0)
-		err(1, "libsodium");
-
 	while ((c = getopt(argc, argv, "d:e:n:")) != -1) {
 		switch (c) {
 		case 'd':
