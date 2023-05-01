@@ -8,5 +8,6 @@ config.mk as necessary and run `make', followed by `make install':
 
 DEPENDENCIES
 
-gpass relies on libsodium to guarantee cryptographic randomness of the chosen
-words.
+Since arc4random(3) was added to glibc, gpass has no external
+dependencies on most platforms. Most people, whose libcs don't have
+arc4random(3) should be able to link gpass with libbsd instead.
