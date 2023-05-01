@@ -1,3 +1,11 @@
+0.4
+
+Removed the libsodium dependency.
+
+arc4random(3) is now part of glibc, meaning that the majority of people
+should be able to "just compile" gpass without any special libraries,
+and the minority could just use libbsd.
+
 0.3.4
 
 Minor maintenance.
