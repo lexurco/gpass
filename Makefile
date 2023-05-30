@@ -4,18 +4,23 @@ BIN = gpass
 OBJ = $(BIN:=.o)
 SRC = $(BIN:=.c)
 MAN = $(BIN:=.1)
+M4S = $(BIN:=.m4)
 
 PREFIX ?= $(DESTDIR)/usr/local
 MANPREFIX ?= $(PREFIX)/man
 
+M4 ?= m4
+
 LIBS = -lm
 
 bindir = $(PREFIX)/bin
-man1dir = $(MANPREFIX)/man1
+mandir = $(MANPREFIX)/man1
 sharedir = $(PREFIX)/share
 gpassdir = $(sharedir)/gpass
 
-all: $(BIN)
+all: $(BIN) $(MAN)
+
+.SUFFIXES: .c .o .1 .m4
 
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LIBS) $(LDFLAGS)
@@ -23,26 +28,30 @@ $(BIN): $(OBJ)
 .c.o:
 	$(CC) -std=c99 -pedantic -DPREFIX=\"$(PREFIX)\" $(CFLAGS) $(CPPFLAGS) -c $<
 
+$(MAN): $(M4S)
+
+.m4.1:
+	$(M4) -DPREFIX=$(PREFIX) <$< >$@
+
 install: all
 	mkdir -p $(bindir)
 	install -m 755 $(BIN) $(bindir)
-	mkdir -p $(man1dir)
-	sed s=PREFIX=$(PREFIX)=g <gpass.1 >$(man1dir)/gpass.1
-	cd $(man1dir) && chmod 644 $(MAN)
+	mkdir -p $(mandir)
+	install -m 644 $(MAN) $(mandir)
 	mkdir -p $(gpassdir)
 	install -m 644 eff.long $(gpassdir)
 
 uninstall:
 	cd $(bindir) && rm -f $(BIN)
-	cd $(man1dir) && rm -f $(MAN)
+	cd $(mandir) && rm -f $(MAN)
 	rm -rf $(gpassdir)
 
 clean:
-	-rm -f $(BIN) $(OBJ) *.tar.gz *.core gpass-$(V)
+	-rm -f $(BIN) $(OBJ) $(MAN) *.tar.gz *.core gpass-$(V)
 
 dist: clean
 	mkdir -p gpass-$(V)
-	cp -f CHANGES README Makefile version.mk eff.long $(SRC) $(MAN) gpass-$(V)
+	cp -f CHANGES README Makefile version.mk eff.long $(SRC) $(M4S) gpass-$(V)
 	tar cf - gpass-$(VERSION) | gzip >gpass-$(V).tar.gz
 	rm -rf gpass-$(V)
 
