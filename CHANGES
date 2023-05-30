@@ -1,3 +1,9 @@
+0.5
+
+Got rid of config.mk, and the man page is now preprocessed with m4
+instead of sed. The program should be much simpler to build and package
+now.
+
 0.4
 
 Removed the libsodium dependency.
