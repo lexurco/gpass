@@ -1,49 +1,52 @@
-include config.mk
-
-.SUFFIXES: .o .c
+include version.mk
 
 BIN = gpass
 OBJ = $(BIN:=.o)
 SRC = $(BIN:=.c)
 MAN = $(BIN:=.1)
 
-all: options $(BIN)
+PREFIX ?= $(DESTDIR)/usr/local
+MANPREFIX ?= $(PREFIX)/man
 
-options:
-	@echo gpass build options:
-	@echo "	CFLAGS = $(CFLAGS)"
-	@echo "	LDFLAGS = $(LDFLAGS)"
-	@echo "	CC = $(CC)"
+LIBS = -lm
+
+bindir = $(PREFIX)/bin
+man1dir = $(MANPREFIX)/man1
+sharedir = $(PREFIX)/share
+gpassdir = $(sharedir)/gpass
+
+all: $(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) -o $@ $(OBJ) $(LDFLAGS)
-
-$(OBJ): config.mk
+	$(CC) -o $@ $(OBJ) $(LIBS) $(LDFLAGS)
 
 .c.o:
-	$(CC) -DPREFIX=\"$(PREFIX)\" $(CFLAGS) $(CPPFLAGS) -c $<
+	$(CC) -std=c99 -pedantic -DPREFIX=\"$(PREFIX)\" $(CFLAGS) $(CPPFLAGS) -c $<
 
 install: all
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	install -m 755 $(BIN) $(DESTDIR)$(PREFIX)/bin/
-	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	sed s=PREFIX=$(PREFIX)=g <gpass.1 >$(DESTDIR)$(MANPREFIX)/man1/gpass.1
-	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/gpass.1
-	mkdir -p $(DESTDIR)$(PREFIX)/share/gpass
-	install -m 644 eff.long $(DESTDIR)$(PREFIX)/share/gpass
+	mkdir -p $(bindir)
+	install -m 755 $(BIN) $(bindir)
+	mkdir -p $(man1dir)
+	sed s=PREFIX=$(PREFIX)=g <gpass.1 >$(man1dir)/gpass.1
+	cd $(man1dir) && chmod 644 $(MAN)
+	mkdir -p $(gpassdir)
+	install -m 644 eff.long $(gpassdir)
 
 uninstall:
-	cd $(DESTDIR)$(PREFIX)/bin && rm -f $(BIN)
-	cd $(DESTDIR)$(MANPREFIX)/man1 && rm -f $(MAN)
-	cd $(DESTDIR)$(PREFIX)/share && rm -rf gpass
+	cd $(bindir) && rm -f $(BIN)
+	cd $(man1dir) && rm -f $(MAN)
+	rm -rf $(gpassdir)
 
 clean:
-	-rm -f $(BIN) $(OBJ) *.tar.gz *.core
+	-rm -f $(BIN) $(OBJ) *.tar.gz *.core gpass-$(V)
 
 dist: clean
-	mkdir -p gpass-$(VERSION)
-	cp -f CHANGES README Makefile config.mk eff.long $(SRC) $(MAN) gpass-$(VERSION)
-	tar cf - gpass-$(VERSION) | gzip >gpass-$(VERSION).tar.gz
-	rm -rf gpass-$(VERSION)
+	mkdir -p gpass-$(V)
+	cp -f CHANGES README Makefile version.mk eff.long $(SRC) $(MAN) gpass-$(V)
+	tar cf - gpass-$(VERSION) | gzip >gpass-$(V).tar.gz
+	rm -rf gpass-$(V)
+
+tags:
+	ctags $(SRC)
 
 .PHONY: all options install uninstall clean dist

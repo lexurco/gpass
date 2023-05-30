@@ -1,7 +1,6 @@
-gpass is a utility to generate secure passphrases. To install simply edit
-config.mk as necessary and run `make', followed by `make install':
+gpass is a utility to generate secure passphrases. To install run `make',
+followed by `make install':
 
-	$ $EDITOR config.mk
 	$ make
 	# make install
 
