@@ -42,7 +42,7 @@ Generate
 passphrases instead of just one.
 .El
 .Sh ENVIRONMENT
-.Bl -tag -width PM_PRIVKEY
+.Bl -tag -width GPASS_DIC
 .It Ev GPASS_DIC
 Path to the dictionary file to use unless the option
 .Fl d

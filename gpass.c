@@ -24,7 +24,7 @@ static int
 usage(void)
 {
 	fprintf(stderr,
-"usage: gpass [-a] [-d dict] [-e bits] [-l length] [-n count]\n");
+"usage: gpass [-a] [-d dict] [-e bits] [-l length] [-n num]\n");
 	exit(EXIT_FAILURE);
 }
 
