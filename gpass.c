@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -9,76 +10,42 @@
 #include <strings.h>
 #include <unistd.h>
 
-#define MAXWORDS 32768
+#define MAXWORDS 	32768
+#define NNUM		('9'-'0' + 1)
+#define NALPHA		('z'-'a' + 1)
+
 #ifndef PREFIX
-#	define PREFIX "/usr/local"
+#	define PREFIX	"/usr/local"
 #endif
 
-#define NNUM ('9'-'0' + 1)
-#define NALPHA ('z'-'a' + 1)
-
-FILE *dicfp;
-uint32_t nwords = 0;
-int offs[MAXWORDS];
-int plen = 70;
 int aflag = 0;
 
-void
-errx(int eval, const char *fmt, ...)
-{
-	fputs("gpass: ", stderr);
-	if (fmt != NULL) {
-		va_list argp;
-		va_start(argp, fmt);
-		vfprintf(stderr, fmt, argp);
-		va_end(argp);
-	}
-	fputc('\n', stderr);
-	exit(eval);
-}
-
-void
-err(int eval, const char *fmt, ...)
-{
-	char *e = strerror(errno);
-	fputs("gpass: ", stderr);
-	if (fmt != NULL) {
-		va_list argp;
-		va_start(argp, fmt);
-		vfprintf(stderr, fmt, argp);
-		va_end(argp);
-	}
-	fputs(": ", stderr);
-	fputs(e, stderr);
-	fputc('\n', stderr);
-	exit(eval);
-}
-
-int
+static int
 usage(void)
 {
 	fprintf(stderr, "usage: gpass [-a] [-d dict] [-e bits] [-n count]\n");
 	exit(EXIT_FAILURE);
 }
 
-void
-setplen(void) {
-	int temp;
+static int
+getplen(int n, int ent) {
+	long	temp;
+	int	plen;
 
-	temp = log2(nwords);
-	plen = plen / temp + !!(plen % temp);
-	plen += !plen;
+	temp = log2(n);
+	plen = ent / temp + !!(ent % temp);
+	return (plen > 0) ? plen : 1;
 }
 
-void
-genalpha(void)
+static void
+genalpha(int plen, int max)
 {
-	int c;
-	int left;
-	uint32_t n;
+	int		c;
+	int		left;
+	uint32_t	n;
 
 	for (left = plen; left; left--) {
-		n = arc4random_uniform(NNUM + NALPHA*2);
+		n = arc4random_uniform(max);
 		if (n < NNUM)
 			putchar('0' + n);
 		else if (n < NNUM + NALPHA)
@@ -89,31 +56,31 @@ genalpha(void)
 	putchar('\n');
 }
 
-void
-gpass_alpha(int npass)
+static void
+gpass_alpha(int npass, int ent)
 {
+	int	n = NNUM + NALPHA*2, plen;
+
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1) /* revoke unveil */
 		err(1, "pledge");
 #endif
-	nwords = NNUM + NALPHA*2;
-	setplen();
+	plen = getplen(n, ent);
 	for (int i = 0; i < npass; i++)
-		genalpha();
+		genalpha(plen, n);
 }
 
-void
-genwords(void)
+static void
+genwords(int plen, int max, const long *offs, FILE *fp)
 {
-	int c;
-	int left;
-	uint32_t n;
+	int		c;
+	unsigned int	n, left;
 
-	for (left = plen; left; left--) {
-		n = arc4random_uniform(nwords) + 1;
-		if (fseek(dicfp, offs[n], SEEK_SET) == -1)
+	for (left = plen; left > 0; left--) {
+		n = arc4random_uniform(max);
+		if (fseek(fp, offs[n], SEEK_SET) == -1)
 			err(1, "fseek");
-		while ((c = getc(dicfp)) != EOF && !isspace(c))
+		while ((c = getc(fp)) != EOF && isgraph(c))
 			putchar(c);
 		if (left > 1)
 			putchar(' ');
@@ -122,9 +89,11 @@ genwords(void)
 }
 
 void
-gpass_words(int npass, char *f)
+gpass_words(int npass, int ent, char *f)
 {
-	char c, isword;
+	FILE	*fp;
+	long	 offs[MAXWORDS];
+	int	 c, isword = 0, nwords, plen;
 
 #ifdef __OpenBSD__
 	if (unveil(f, "r") == -1)
@@ -132,32 +101,29 @@ gpass_words(int npass, char *f)
 	if (pledge("stdio rpath", NULL) == -1) /* revoke unveil */
 		err(1, "pledge");
 #endif
-	if (!(dicfp = fopen(f, "r")))
+	if (!(fp = fopen(f, "r")))
 		err(1, "could not open %s", f);
-	offs[0] = ftell(dicfp);
-	while ((c = getc(dicfp)) != EOF && nwords < MAXWORDS)
-		if (isspace(c)) {
-			nwords += isword ? 1 : 0;
+	while ((c = getc(fp)) != EOF && nwords < MAXWORDS)
+		if (!isgraph(c))
 			isword = 0;
-			offs[nwords] = ftell(dicfp);
-		} else
+		else if (!isword) {
 			isword = 1;
+			offs[nwords++] = ftell(fp) - 1;
+		}
 	if (nwords < 2)
 		errx(1, "%s has less that 2 words", f);
-	setplen();
+	plen = getplen(nwords, ent);
 	for (int i = 0; i < npass; i++)
-		genwords();
-	fclose(dicfp);
+		genwords(plen, nwords, offs, fp);
+	fclose(fp);
 }
 
 int
 main(int argc, char *argv[])
 {
-	int c, npass;
-	char *dicname;
-
-	npass = 1;
-	dicname = NULL;
+	int		 c, ent = 70, npass = 1;
+	char		*dicname = NULL;
+	const char	*errstr = NULL;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio unveil rpath", NULL) == -1) /* first call */
@@ -172,12 +138,14 @@ main(int argc, char *argv[])
 			dicname = optarg;
 			break;
 		case 'e':
-			if ((plen = atoi(optarg)) < 1)
-				errx(1, "less than 1 bit of entropy requested");
+			ent = strtonum(optarg, 1, INT_MAX, &errstr);
+			if (errstr != NULL)
+				errx(1, "entropy is %s: %s", errstr, optarg);
 			break;
 		case 'n':
-			if ((npass = atoi(optarg)) < 1)
-				errx(1, "less than 1 passphrase requested");
+			npass = strtonum(optarg, 1, INT_MAX, &errstr);
+			if (errstr != NULL)
+				errx(1, "npass is %s: %s", errstr, optarg);
 			break;
 		default:
 			usage();
@@ -185,11 +153,11 @@ main(int argc, char *argv[])
 	}
 
 	if (aflag)
-		gpass_alpha(npass);
+		gpass_alpha(npass, ent);
 	else {
 		if (!dicname && !(dicname = getenv("GPASS_DIC")))
 			dicname = PREFIX "/share/gpass/eff.long";
-		gpass_words(npass, dicname);
+		gpass_words(npass, ent, dicname);
 	}
 
 	return 0;
