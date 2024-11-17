@@ -23,7 +23,8 @@ int aflag = 0;
 static int
 usage(void)
 {
-	fprintf(stderr, "usage: gpass [-a] [-d dict] [-e bits] [-n count]\n");
+	fprintf(stderr,
+"usage: gpass [-a] [-d dict] [-e bits] [-l length] [-n count]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -57,15 +58,16 @@ genalpha(int plen, int max)
 }
 
 static void
-gpass_alpha(int npass, int ent)
+gpass_alpha(int npass, int plen, int ent)
 {
-	int	n = NNUM + NALPHA*2, plen;
+	int	n = NNUM + NALPHA*2;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1) /* revoke unveil */
 		err(1, "pledge");
 #endif
-	plen = getplen(n, ent);
+	if (plen == 0)
+		plen = getplen(n, ent);
 	for (int i = 0; i < npass; i++)
 		genalpha(plen, n);
 }
@@ -89,11 +91,11 @@ genwords(int plen, int max, const long *offs, FILE *fp)
 }
 
 void
-gpass_words(int npass, int ent, char *f)
+gpass_words(int npass, int plen, int ent, char *f)
 {
 	FILE	*fp;
 	long	 offs[MAXWORDS];
-	int	 c, isword = 0, nwords, plen;
+	int	 c, isword = 0, nwords;
 
 #ifdef __OpenBSD__
 	if (unveil(f, "r") == -1)
@@ -112,7 +114,8 @@ gpass_words(int npass, int ent, char *f)
 		}
 	if (nwords < 2)
 		errx(1, "%s has less that 2 words", f);
-	plen = getplen(nwords, ent);
+	if (plen == 0)
+		plen = getplen(nwords, ent);
 	for (int i = 0; i < npass; i++)
 		genwords(plen, nwords, offs, fp);
 	fclose(fp);
@@ -121,7 +124,7 @@ gpass_words(int npass, int ent, char *f)
 int
 main(int argc, char *argv[])
 {
-	int		 c, ent = 70, npass = 1;
+	int		 c, ent = 70, npass = 1, plen = 0;
 	char		*dicname = NULL;
 	const char	*errstr = NULL;
 
@@ -129,7 +132,7 @@ main(int argc, char *argv[])
 	if (pledge("stdio unveil rpath", NULL) == -1) /* first call */
 		err(1, "pledge");
 #endif
-	while ((c = getopt(argc, argv, "ad:e:n:")) != -1) {
+	while ((c = getopt(argc, argv, "ad:e:l:n:")) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -138,12 +141,17 @@ main(int argc, char *argv[])
 			dicname = optarg;
 			break;
 		case 'e':
-			ent = strtonum(optarg, 1, INT_MAX, &errstr);
+			ent = strtonum(optarg, 0, INT_MAX, &errstr);
 			if (errstr != NULL)
 				errx(1, "entropy is %s: %s", errstr, optarg);
 			break;
+		case 'l':
+			plen = strtonum(optarg, 0, INT_MAX, &errstr);
+			if (errstr != NULL)
+				errx(1, "length is %s: %s", errstr, optarg);
+			break;
 		case 'n':
-			npass = strtonum(optarg, 1, INT_MAX, &errstr);
+			npass = strtonum(optarg, 0, INT_MAX, &errstr);
 			if (errstr != NULL)
 				errx(1, "npass is %s: %s", errstr, optarg);
 			break;
@@ -152,12 +160,15 @@ main(int argc, char *argv[])
 		}
 	}
 
+	if (npass == 0 || (plen == 0 && ent == 0))
+		return 0;
+
 	if (aflag)
-		gpass_alpha(npass, ent);
+		gpass_alpha(npass, plen, ent);
 	else {
 		if (!dicname && !(dicname = getenv("GPASS_DIC")))
 			dicname = PREFIX "/share/gpass/eff.long";
-		gpass_words(npass, ent, dicname);
+		gpass_words(npass, plen, ent, dicname);
 	}
 
 	return 0;

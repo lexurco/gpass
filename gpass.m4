@@ -28,6 +28,14 @@ Generate a passphrase with at least the specified number of
 .Ar bits
 of entropy.
 Default is 70.
+.It Fl l Ar length
+Generate a passphrase of
+.Ar length
+words, or characters if
+.Fl a
+is used.
+Overrides
+.Fl e .
 .It Fl n Ar num
 Generate
 .Ar num
