@@ -6,6 +6,7 @@
 .Nd generate passphrases
 .Sh SYNOPSIS
 .Nm
+.Op Fl a
 .Op Fl d Ar dict
 .Op Fl e Ar bits
 .Op Fl n Ar num
@@ -16,6 +17,9 @@ outputs a secure passphrase by randomly choosing an appropriate number of lines
 from a dictionary file, containing whitespace-separated words.
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl a
+Instead of generating a passphrases from the wordlist, generate strings of
+random alphanumeric characters.
 .It Fl d Ar dict
 Use the dictionary
 .Ar dict .
