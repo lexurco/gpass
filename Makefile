@@ -4,12 +4,9 @@ BIN = gpass
 OBJ = $(BIN:=.o)
 SRC = $(BIN:=.c)
 MAN = $(BIN:=.1)
-M4S = $(BIN:=.m4)
 
 PREFIX ?= $(DESTDIR)/usr/local
 MANPREFIX ?= $(PREFIX)/man
-
-M4 ?= m4
 
 LIBS = -lm
 
@@ -20,18 +17,11 @@ gpassdir = $(sharedir)/gpass
 
 all: $(BIN) $(MAN)
 
-.SUFFIXES: .c .o .1 .m4
-
 $(BIN): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LIBS) $(LDFLAGS)
 
 .c.o:
 	$(CC) -std=c99 -pedantic -DPREFIX=\"$(PREFIX)\" $(CFLAGS) $(CPPFLAGS) -c $<
-
-$(MAN): $(M4S)
-
-.m4.1:
-	$(M4) -DPREFIX=$(PREFIX) <$< >$@
 
 install: all
 	mkdir -p $(bindir)
@@ -47,11 +37,11 @@ uninstall:
 	rm -rf $(gpassdir)	# clean up legacy files
 
 clean:
-	-rm -f $(BIN) $(OBJ) $(MAN) *.tar.gz *.core gpass-$(V)
+	-rm -rf $(BIN) $(OBJ) *.tar.gz *.core gpass-$(V)
 
 dist: clean
 	mkdir -p gpass-$(V)
-	cp -f CHANGES COPYING README Makefile version.mk eff.long $(SRC) $(M4S) \
+	cp -f CHANGES COPYING README Makefile version.mk eff.long $(SRC) $(MAN) \
 	    gpass-$(V)
 	tar cf - gpass-$(V) | gzip >gpass-$(V).tar.gz
 	rm -rf gpass-$(V)

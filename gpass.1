@@ -1,4 +1,4 @@
-.Dd May 30, 2023
+.Dd November 17, 2024
 .Dt GPASS 1
 .Os
 .Sh NAME
@@ -49,11 +49,24 @@ Path to the dictionary file to use unless the option
 is specified.
 .El
 .Sh FILES
-.Bl -tag -width Ds
-.It Pa PREFIX/share/gpass/eff.long
-The default dictionary file.
+.Bl -tag -width Ds -compact
+.It Pa $XDG_DATA_HOME/gpass.dic
+.It Pa $HOME/.gpass.dic
+.It Pa /usr/share/gpass.dic
+.It Pa /usr/local/share/gpass.dic
+Paths searched for the default dictionary file.
+Only searched if
+.Ev GPASS_DIC
+is not set or empty, and
+.Fl d
+is not used.
+First to be found is used.
+.Pa $HOME/.gpass.dic
+is only used when
+.Ev XDG_DATA_HOME
+is not set.
 .El
-.Sh AUTHORS
-.An Alexander Arkhipov Aq Mt aa@manpager.net .
 .Sh EXIT STATUS
 .Ex -std
+.Sh AUTHORS
+.An Alex Arx Aq Mt aa@manpager.net .
