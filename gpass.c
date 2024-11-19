@@ -108,7 +108,7 @@ gpass_words(int npass, int plen, int ent, char *f)
 {
 	FILE	*fp;
 	long	 offs[MAXWORDS];
-	int	 c, isword = 0, nwords;
+	int	 c, isword = 0, nwords = 0;
 
 #ifdef __OpenBSD__
 	if (unveil(f, "r") == -1)
