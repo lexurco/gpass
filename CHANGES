@@ -1,3 +1,11 @@
+0.6
+
+- Added the -al flags.
+- Default dictionary file is now searched in $XDG_DATA_HOME/gpass.dic,
+  $HOME/.gpass.dic, /usr/share/gpass.dic and /usr/local/share/gpass.dic
+  instead of $PREFIX/share/gpass/eff.long, where $PREFIX is a
+  compile-time variable.
+
 0.5
 
 Got rid of config.mk, and the man page is now preprocessed with m4
