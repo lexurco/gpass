@@ -87,7 +87,7 @@ genwords(int plen, int max, const long *offs, FILE *fp)
 	putchar('\n');
 }
 
-void
+static void
 gpass_words(int npass, int plen, int ent, char *f)
 {
 	FILE	*fp;
