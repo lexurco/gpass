@@ -38,13 +38,13 @@ install: all
 	install -m 755 $(BIN) $(bindir)
 	mkdir -p $(mandir)
 	install -m 644 $(MAN) $(mandir)
-	mkdir -p $(gpassdir)
-	install -m 644 eff.long $(gpassdir)
+	install -m 644 eff.long $(sharedir)/gpass.dic
+	rm -rf $(gpassdir)	# clean up legacy files
 
 uninstall:
 	cd $(bindir) && rm -f $(BIN)
 	cd $(mandir) && rm -f $(MAN)
-	rm -rf $(gpassdir)
+	rm -rf $(gpassdir)	# clean up legacy files
 
 clean:
 	-rm -f $(BIN) $(OBJ) $(MAN) *.tar.gz *.core gpass-$(V)

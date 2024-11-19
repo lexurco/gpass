@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <math.h>
 #include <stdarg.h>
@@ -13,10 +14,6 @@
 #define MAXWORDS 	32768
 #define NNUM		('9'-'0' + 1)
 #define NALPHA		('z'-'a' + 1)
-
-#ifndef PREFIX
-#	define PREFIX	"/usr/local"
-#endif
 
 int aflag = 0;
 
@@ -121,6 +118,57 @@ gpass_words(int npass, int plen, int ent, char *f)
 	fclose(fp);
 }
 
+static char *
+getdicname(int *allocated)
+{
+	char	*xdg, *home, *path;
+
+	if ((path = getenv("GPASS_DIC")) != NULL && *path != '\0') {
+		*allocated = 0;
+		return path;
+	}
+
+	if (((xdg = getenv("XDG_DATA_HOME")) != NULL && *xdg != '\0') ||
+	    ((home = getenv("HOME")) != NULL && *home != '\0')) {
+		size_t	 sz;
+		char	*pre, *suf;
+
+		if (xdg != NULL) {
+			pre = xdg;
+			suf = "/gpass.dic";
+		} else {
+			pre = home;
+			suf = "/.gpass.dic";
+		}
+
+		sz = strlen(pre) + strlen(suf) + 1;
+		if ((path = malloc(sz)) == NULL)
+			err(1, "malloc");
+		strlcpy(path, pre, sz);
+		strlcat(path, suf, sz);
+
+		if (access(path, F_OK) == 0) {
+			*allocated = 1;
+			return path;
+		} else {
+			free(path);
+			path = NULL;
+		}
+	}
+
+	if (access("/usr/share/gpass.dic", F_OK) == 0) {
+		*allocated = 0;
+		return "/usr/share/gpass.dic";
+	}
+	if (access("/usr/local/share/gpass.dic", F_OK) == 0) {
+		*allocated = 0;
+		return "/usr/local/share/gpass.dic";
+	}
+
+	*allocated = 0;
+	return NULL;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -166,9 +214,13 @@ main(int argc, char *argv[])
 	if (aflag)
 		gpass_alpha(npass, plen, ent);
 	else {
-		if (!dicname && !(dicname = getenv("GPASS_DIC")))
-			dicname = PREFIX "/share/gpass/eff.long";
+		int allocated = 0;
+		if (dicname == NULL &&
+		    (dicname = getdicname(&allocated)) == NULL)
+			errx(1, "couldn't find dictionary file");
 		gpass_words(npass, plen, ent, dicname);
+		if (allocated)
+			free(dicname);
 	}
 
 	return 0;
